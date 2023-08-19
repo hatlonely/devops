@@ -1,0 +1,58 @@
+env:
+  default:
+    DOCKER_WORK_DIR: "."
+    DOCKER_FILE: "Dockerfile"
+    NAME: "overide-me"
+    GOPRIVATE_GIT_URL_INSTEAD_OF: "https://gitlab.alibaba-inc.com"
+    GOPRIVATE_GIT_URL: "https://{{.gitlab.dev.username}}:{{.gitlab.dev.token}}@gitlab.alibaba-inc.com"
+    VERSION: "$(git describe --tags)"
+    REGISTRY_BASE_ENDPOINT: "{{ .registry.base.endpoint }}"
+    REGISTRY_BASE_USERNAME: "{{ .registry.base.username }}"
+    REGISTRY_BASE_PASSWORD: "{{ .registry.base.password }}"
+    REGISTRY_BASE_NAMESPACE: "{{ .registry.base.namespace }}"
+    REGISTRY_ENDPOINT: "${REGISTRY_BASE_ENDPOINT}"
+    REGISTRY_USERNAME: "${REGISTRY_BASE_USERNAME}"
+    REGISTRY_PASSWORD: "${REGISTRY_BASE_PASSWORD}"
+    REGISTRY_NAMESPACE: "${REGISTRY_BASE_NAMESPACE}"
+
+task:
+  image:
+    workDir: ${DOCKER_WORK_DIR}
+    step:
+      - docker login --username="${REGISTRY_USERNAME}" --password="${REGISTRY_PASSWORD}" "${REGISTRY_ENDPOINT}"
+      - docker login --username="${REGISTRY_BASE_USERNAME}" --password="${REGISTRY_BASE_PASSWORD}" "${REGISTRY_BASE_ENDPOINT}"
+      - |
+        docker build \
+          --build-arg git_url=${GOPRIVATE_GIT_URL} \
+          --build-arg git_url_instand_of=${GOPRIVATE_GIT_URL_INSTEAD_OF} \
+          --build-arg git_url_instead_of=${GOPRIVATE_GIT_URL_INSTEAD_OF} \
+          --tag=${REGISTRY_ENDPOINT}/${REGISTRY_NAMESPACE}/${NAME}:${VERSION} \
+          -f ${DOCKER_FILE} .
+      - docker login --username="${REGISTRY_USERNAME}" --password="${REGISTRY_PASSWORD}" "${REGISTRY_ENDPOINT}"
+      - docker push "${REGISTRY_ENDPOINT}/${REGISTRY_NAMESPACE}/${NAME}:${VERSION}"
+  build:
+    workDir: ${DOCKER_WORK_DIR}
+    step:
+      - docker login --username="${REGISTRY_BASE_USERNAME}" --password="${REGISTRY_BASE_PASSWORD}" "${REGISTRY_BASE_ENDPOINT}"
+      - |
+        docker build \
+          --build-arg git_url=${GOPRIVATE_GIT_URL} \
+          --build-arg git_url_instand_of=${GOPRIVATE_GIT_URL_INSTEAD_OF} \
+          --build-arg git_url_instead_of=${GOPRIVATE_GIT_URL_INSTEAD_OF} \
+          --tag=${REGISTRY_BASE_ENDPOINT}/${REGISTRY_BASE_NAMESPACE}/${NAME}:${VERSION} \
+          -f ${DOCKER_FILE} .
+      - docker login --username="${REGISTRY_BASE_USERNAME}" --password="${REGISTRY_BASE_PASSWORD}" "${REGISTRY_BASE_ENDPOINT}"
+      - docker push "${REGISTRY_BASE_ENDPOINT}/${REGISTRY_BASE_NAMESPACE}/${NAME}:${VERSION}"
+  push:
+    workDir: ${DOCKER_WORK_DIR}
+    step:
+      - |
+        sh $DEP/devops/tool/image.sh sync \
+          "${REGISTRY_BASE_ENDPOINT}" "${REGISTRY_BASE_NAMESPACE}" "${REGISTRY_BASE_USERNAME}" "${REGISTRY_BASE_PASSWORD}" \
+          "${REGISTRY_ENDPOINT}" "${REGISTRY_NAMESPACE}" "${REGISTRY_USERNAME}" "${REGISTRY_PASSWORD}" \
+          "${NAME}" "${VERSION}"
+  rmi:
+    workDir: ${DOCKER_WORK_DIR}
+    step:
+      - docker login --username="${REGISTRY_USERNAME}" --password="${REGISTRY_PASSWORD}" "${REGISTRY_ENDPOINT}"
+      - docker image rm "${REGISTRY_ENDPOINT}/${REGISTRY_NAMESPACE}/${NAME}:${VERSION}" || true

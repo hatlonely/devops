@@ -9,7 +9,6 @@ from aliyunsdkcore.auth.credentials import StsTokenCredential
 from aliyunsdkcore.auth.credentials import AccessKeyCredential
 from aliyunsdkcore.request import CommonRequest
 
-
 product_info = {
     "ots": "2016-06-20",
     "imm": "2017-09-06",
@@ -26,6 +25,7 @@ product_info = {
     "cdn": "2018-05-10",
     "cr": "2018-12-01",
     "ons": "2019-02-14",
+    "ons": "2019-02-14"
 }
 
 
@@ -235,6 +235,11 @@ def main():
     "Action": "BatchSetCdnDomainConfig",
     "DomainNames": "regression.office-static.dev.imm.aliyuncs.com",
     "Functions": "[{\"functionName\": \"l2_oss_key\", \"functionArgs\": [{\"ArgName\": \"private_oss_auth\", \"ArgValue\": \"on\"}]}]"
+  }'
+  # rocketmq 4.0 <https://help.aliyun.com/document_detail/445290.html>
+  python3 alics/acs.py -i ak -s sk -p ons -e "ons.cn-beijing.aliyuncs.com" -a OnsInstanceInServiceList --request '{}'
+  python3 alics/acs.py -i ak -s sk -p ons -e "ons.cn-beijing.aliyuncs.com" -a OnsInstanceCreate --request '{
+    "InstanceName": "imm-test-hl"
   }'
 """)
 

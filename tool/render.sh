@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ue
+
 function Trac() {
     echo "[TRAC] [$(date +"%Y-%m-%d %H:%M:%S")] $1"
 }
