@@ -20,7 +20,7 @@ function CheckNotEmpty() {
 }
 
 function Render() {
-    local in=$1
+    local in=$(realpath "$1")
     local out=$2
 
     if [[ -f "${in}" ]]; then
@@ -30,8 +30,10 @@ function Render() {
             fout="${fin//$in/$out}"
             ext="${fin##*.}"
             if [[ "${ext}" == "tpl" ]]; then
+                echo RenderFile "${fin}" "${fout%.*}"
                 RenderFile "${fin}" "${fout%.*}"
             elif [[ "$ext" == "shtpl" ]]; then
+                echo RenderFile "${fin}" "${fout%.*}"
                 RenderFile "${fin}" "${fout%.*}"
             else
                 mkdir -p "$(dirname "${fout}")"
